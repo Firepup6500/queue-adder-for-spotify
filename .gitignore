@@ -1,0 +1,5 @@
+.env
+*.swp
+database.db
+*.sav*
+fpsql

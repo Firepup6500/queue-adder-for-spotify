@@ -202,7 +202,14 @@ async def add():
             async with await session.post(
                 f"https://api.spotify.com/v1/me/player/queue?" + urlencode({"uri": uri})
             ) as response:
-                print(response)
+                if response.status != 200:
+                    print(response)
+                    return (
+                        '{"ok":false,"error":"unknown","http_code":'
+                        + str(response.status)
+                        + "}",
+                        response.status,
+                    )
     return '{"ok":true,"http_code":200}', 200
 
 

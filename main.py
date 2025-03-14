@@ -296,7 +296,7 @@ async def add():
             ) as response:
                 json = {}
                 try:
-                    json = await response2.json()
+                    json = await response.json()
                 except:
                     return (
                         '{"ok":false,"error":"spotify_is_malformed","message":"!! THIS STATE SHOULD BE IMPOSSIBLE !! Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',

@@ -316,6 +316,11 @@ async def add():
                                 '{"ok":false,"error":"spotify_premium_required","http_code":403}',
                                 403,
                             )
+                        if json.get("error") and json["error"].get("status") == 404:
+                            return (
+                                '{"ok":false,"error":"spotify_is_not_playing","http_code":404}',
+                                404,
+                            )
                     except Exception:
                         print(await response.get_data())
                     fail_count += 1

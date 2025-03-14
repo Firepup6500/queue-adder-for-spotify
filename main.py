@@ -294,7 +294,15 @@ async def add():
             async with await session.get(
                 f"https://api.spotify.com/v1/playlists/{userData['playlist_id']}/tracks?fields=items.track.uri&limit=50&offset={offset}",
             ) as response:
-                json = await response.json()
+                json = {}
+                try:
+                    json = await response2.json()
+                except:
+                    return (
+                        '{"ok":false,"error":"spotify_is_malformed","message":"!! THIS STATE SHOULD BE IMPOSSIBLE !! Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',
+                        400,
+                        {"Content-Type": "application/json"},
+                    )
                 for item in json["items"]:
                     uris.append(item["track"]["uri"])
                 offset += 50

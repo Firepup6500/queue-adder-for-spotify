@@ -52,6 +52,9 @@ async def timer(userid: str) -> None:
             await db.set(userid, userData)
     while True:
         await sleep(userData["expires_in"] - 5)
+        userData = await db.get(
+            userid
+        )  # A user authing again might break things, re-sync with their data here
         async with ClientSession(
             headers={
                 "content-type": "application/x-www-form-urlencoded",

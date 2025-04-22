@@ -1,15 +1,16 @@
+# pylint: disable=missing-function-docstring,missing-module-docstring
 from os import environ as env
-from dotenv import load_dotenv
-from quart import Quart, request, redirect, send_from_directory
 from threading import Thread
 from asyncio import run as aRun, sleep
-from aiohttp import ClientSession, FormData
-from fpsql import asyncSql
 from secrets import token_hex
 from base64 import b64encode as b64enc, b64decode as b64dec
 from urllib.parse import urlencode
 from random import shuffle
 from re import match
+from aiohttp import ClientSession, FormData
+from fpsql import asyncSql
+from dotenv import load_dotenv
+from quart import Quart, request, redirect
 from quart_auth import (
     AuthUser,
     current_user,
@@ -20,12 +21,16 @@ from quart_auth import (
     Unauthorized,
 )
 
+# pylint: disable=used-before-assignment,redefined-builtin
 __p = print
 
 
 def print(*args, **kwargs):
     kwargs["flush"] = True
     __p(*args, **kwargs)
+
+
+# pylint: enable=used-before-assignment,redefined-builtin
 
 
 async def timer(userid: str) -> None:
@@ -151,6 +156,7 @@ async def logout():
 @quartApp.route("/", methods=["GET"])
 @login_required
 async def dashboard():
+    # pylint: disable=line-too-long
     userData = await db.get(current_user.auth_id)
     playlist_id = userData.get("playlist_id", "")
     playlistElement = "<p>No playlist configured! Please set one below</p>"
@@ -235,9 +241,10 @@ async def callback():
                     "https://api.spotify.com/v1/me",
                 ) as response2:
                     json2 = {}
+                    # pylint: disable=bare-except, fixme
                     try:
                         json2 = await response2.json()
-                    except:
+                    except:  # TODO: Get what error this actually returns
                         return (
                             '{"ok":false,"error":"spotify_is_malformed","message":"Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',
                             400,
@@ -297,10 +304,11 @@ async def add():
             async with await session.get(
                 f"https://api.spotify.com/v1/playlists/{userData['playlist_id']}/tracks?fields=items.track.uri&limit=50&offset={offset}",
             ) as response:
+                # pylint: disable=bare-except, fixme
                 json = {}
                 try:
                     json = await response.json()
-                except:
+                except:  # TODO: Get what error this actually returns
                     return (
                         '{"ok":false,"error":"spotify_is_malformed","message":"!! THIS STATE SHOULD BE IMPOSSIBLE !! Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',
                         400,
@@ -315,9 +323,10 @@ async def add():
         fail_count = 0
         for uri in uris:
             async with await session.post(
-                f"https://api.spotify.com/v1/me/player/queue?" + urlencode({"uri": uri})
+                "https://api.spotify.com/v1/me/player/queue?" + urlencode({"uri": uri})
             ) as response:
                 if response.status != 200:
+                    # pylint: disable=bare-except, fixme
                     print(response)
                     try:
                         json = await response.json()
@@ -332,7 +341,7 @@ async def add():
                                 '{"ok":false,"error":"spotify_is_not_playing","http_code":404}',
                                 404,
                             )
-                    except Exception:
+                    except:  # TODO: Get what error this actually returns
                         print(await response.get_data())
                     fail_count += 1
     return (
@@ -389,10 +398,11 @@ async def settings():
 
 
 if __name__ == "__main__":
+    # pylint: disable=bare-except, fixme
     try:
         for userid in aRun(db.get("users")):
             Thread(target=aRun, args=(timer(userid),), daemon=True).start()
-    except Exception:
+    except:  # TODO: Get what error this actually returns
         print("Database must not have been initalized, initalizing now.")
         aRun(db.set("users", []))
     quartApp.run(host="0.0.0.0", port=int(env.get("PORT", "65036")))

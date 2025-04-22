@@ -366,7 +366,7 @@ async def settings():
             {"Content-Type": "application/json"},
         )
     if match(
-        "^https:\/\/open\.spotify\.com\/playlist\/[A-Za-z0-9]+(\?.+)?$", playlist_id
+        "^https://open\\.spotify\\.com/playlist/[A-Za-z0-9]+(\\?.+)?$", playlist_id
     ):
         playlist_id = playlist_id.split("/")[4].split("?")[0]
     if not isBase62(playlist_id):

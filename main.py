@@ -338,7 +338,7 @@ async def add():
                                 if json["error"].get("status") == 400:
                                     fail_count += 1
                                     print("Invalid track, likely local...")
-                                    continue
+                                    break
                                 print(json)
                                 if json["error"].get("status") == 403:
                                     return (

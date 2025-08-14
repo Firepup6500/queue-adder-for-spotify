@@ -9,7 +9,7 @@ from random import shuffle
 from re import match
 from aiohttp import ClientSession, FormData
 from aiohttp.client_exceptions import ContentTypeError
-from fpsql import asyncSql
+from fpsql.asyncio import sql as asyncSql
 from dotenv import load_dotenv
 from quart import Quart, request, redirect
 from quart_auth import (
@@ -279,6 +279,7 @@ async def callback():
 
 @quartApp.route("/add/", methods=["POST"])
 async def add():
+    # pylint: disable=too-many-return-statements
     if not current_user.auth_id:
         return (
             '{"ok":false,"error":"unauthorized","http_code":401}',
@@ -309,7 +310,7 @@ async def add():
                     json = await response.json()
                 except ContentTypeError:
                     return (
-                        '{"ok":false,"error":"spotify_is_malformed","message":"!! THIS STATE SHOULD BE IMPOSSIBLE !! Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',
+                        '{"ok":false,"error":"spotify_is_malformed_at_an_impossible_location","message":"!! THIS STATE SHOULD BE IMPOSSIBLE !! Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',
                         400,
                         {"Content-Type": "application/json"},
                     )
@@ -321,27 +322,49 @@ async def add():
         shuffle(uris)
         fail_count = 0
         for uri in uris:
-            async with await session.post(
-                "https://api.spotify.com/v1/me/player/queue?" + urlencode({"uri": uri})
-            ) as response:
-                if response.status != 200:
-                    print(response)
-                    try:
-                        json = await response.json()
-                        print(json)
-                        if json.get("error") and json["error"].get("status") == 403:
+            ratelimited = 1
+            while ratelimited:
+                async with await session.post(
+                    "https://api.spotify.com/v1/me/player/queue?"
+                    + urlencode({"uri": uri})
+                ) as response:
+                    if response.status == 429:
+                        await sleep(1)
+                    elif response.status != 200:
+                        print(response)
+                        try:
+                            json = await response.json()
+                            if json.get("error"):
+                                if json["error"].get("status") == 400:
+                                    fail_count += 1
+                                    print("Invalid track, likely local...")
+                                    continue
+                                print(json)
+                                if json["error"].get("status") == 403:
+                                    return (
+                                        '{"ok":false,"error":"spotify_premium_required","http_code":403}',
+                                        403,
+                                    )
+                                if json["error"].get("status") == 404:
+                                    return (
+                                        '{"ok":false,"error":"spotify_is_not_playing","http_code":404}',
+                                        404,
+                                    )
+                            else:
+                                return (
+                                    '{"ok":false,"error":"spotify_has_no_error_data","http_code":400}',
+                                    400,
+                                )
+                            ratelimited = 0
+                            fail_count += 1
+                        except ContentTypeError:
+                            print(await response.read())
                             return (
-                                '{"ok":false,"error":"spotify_premium_required","http_code":403}',
-                                403,
+                                f'{{"ok":false,"error":"unknown_spotify_error","http_code":{response.status}}}',
+                                response.status,
                             )
-                        if json.get("error") and json["error"].get("status") == 404:
-                            return (
-                                '{"ok":false,"error":"spotify_is_not_playing","http_code":404}',
-                                404,
-                            )
-                    except ContentTypeError:
-                        print(await response.get_data())
-                    fail_count += 1
+                    else:
+                        ratelimited = 0  # obviously...
     return (
         f'{{"ok":true,"fail_count":{fail_count},"http_code":200}}',
         200,

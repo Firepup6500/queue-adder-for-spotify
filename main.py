@@ -145,7 +145,7 @@ quartApp.route(
 
 @quartApp.errorhandler(Unauthorized)
 async def redirect_to_login(*_):
-    return redirect("oauth")
+    return redirect("oauth/")
 
 
 @quartApp.route("/logout/", methods=["GET"])

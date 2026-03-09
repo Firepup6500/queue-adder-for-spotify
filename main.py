@@ -245,6 +245,8 @@ async def callback():
                     try:
                         json2 = await response2.json()
                     except ContentTypeError:
+                        text = await response2.text()
+                        print(f"ContentTypeError parsing user data, response data follows:\n{text}")
                         return (
                             '{"ok":false,"error":"spotify_is_malformed","message":"Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',
                             400,
@@ -309,6 +311,8 @@ async def add():
                 try:
                     json = await response.json()
                 except ContentTypeError:
+                    text = await response.text()
+                    print(f"ContentTypeError parsing playlist data (SHOULD BE IMPOSSIBLE), response data follows:\n{text}")
                     return (
                         '{"ok":false,"error":"spotify_is_malformed_at_an_impossible_location","message":"!! THIS STATE SHOULD BE IMPOSSIBLE !! Contact the app owner, their app is likely in development mode and requires manually adding users to the app config","http_code":400}',
                         400,
@@ -358,7 +362,8 @@ async def add():
                             ratelimited = 0
                             fail_count += 1
                         except ContentTypeError:
-                            print(await response.read())
+                            text = await response.text()
+                            print(f"ContentTypeError parsing track, response data follows:\n{text}")
                             return (
                                 f'{{"ok":false,"error":"unknown_spotify_error","http_code":{response.status}}}',
                                 response.status,
